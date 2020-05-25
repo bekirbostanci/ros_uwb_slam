@@ -14,69 +14,24 @@ from scipy.ndimage.interpolation import shift
 
 
 # #plot preferences, interactive plotting mode
-# fig = plt.figure()
-# plt.axis([-1, 12, 0, 10])
-# plt.ion()
-# plt.show()
-#
-# def plot_state(mu, sigma, landmarks, map_limits):
-#     # Visualizes the state of the kalman filter.
-#     #
-#     # Displays the mean and standard deviation of the belief,
-#     # the state covariance sigma and the position of the
-#     # landmarks.
-#
-#     # landmark positions
-#     lx = []
-#     ly = []
-#
-#     for i in range (len(landmarks)):
-#         lx.append(landmarks[i+1][0])
-#         ly.append(landmarks[i+1][1])
-#
-#     # mean of belief as current estimate
-#     estimated_pose = mu
-#
-#     #calculate and plot covariance ellipse
-#     covariance = sigma[0:2, 0:2]
-#     eigenvals, eigenvecs = np.linalg.eig(covariance)
-#
-#     #get largest eigenvalue and eigenvector
-#     max_ind = np.argmax(eigenvals)
-#     max_eigvec = eigenvecs[:, max_ind]
-#     max_eigval = eigenvals[max_ind]
-#
-#     #get smallest eigenvalue and eigenvector
-#     min_ind = 0
-#     if max_ind == 0:
-#         min_ind = 1
-#
-#     min_eigvec = eigenvecs[:, min_ind]
-#     min_eigval = eigenvals[min_ind]
-#
-#     #chi-square value for sigma confidence interval
-#     chisquare_scale = 2.2789
-#
-#     #calculate width and height of confidence ellipse
-#     width = 2 * np.sqrt(chisquare_scale*max_eigval)
-#     height = 2 * np.sqrt(chisquare_scale*min_eigval)
-#     angle = np.arctan2(max_eigvec[1], max_eigvec[0])
-#
-#     #generate covariance ellipse
-#     ell = Ellipse(xy = [estimated_pose[0], estimated_pose[1]], width=width, height=height, angle=angle/np.pi*180)
-#     ell.set_alpha(0.25)
-#
-#     # plot filter state and covariance
-#     plt.clf()
-#     plt.gca().add_artist(ell)
-#     plt.plot(lx, ly, 'bo', markersize=10)
-#     plt.quiver(estimated_pose[0], estimated_pose[1], np.cos(estimated_pose[2]), np.sin(estimated_pose[2]), angles='xy', scale_units='xy')
-#     plt.axis(map_limits)
-#
-#     plt.pause(0.01)
+fig = plt.figure()
+plt.ion()
+plt.show()
+
+def plot_state():
+    yocc_val = occ_val
+    for i in range(len(cordinates1[0])):
+        yocc_val[int(cordinates1[0][i]/10)][int(cordinates1[1][i]/10)]=1
+
+    #shift map
+    yocc_val= np.roll(yocc_val, 400, axis=0)
+    yocc_val= np.roll(yocc_val, 400, axis=1)
 
 
-
+    plt.clf()
+    plt.imshow(yocc_val)
+    plt.pause(0.01)
+    plt.clf()
 
 
 
@@ -119,7 +74,7 @@ def prediction_step(odometry, mu, sigma):
     y_new = y + delta_vel*np.sin(theta)/30
 
 
-    theta_new = theta + delta_w/30
+    theta_new = theta + delta_w
 
     #delta_vel = math.sqrt(math.square(delta_vel_x)+math.square(delta_vel_y))
     #Jakobian of g with respect to the state
@@ -193,7 +148,7 @@ def correction_step(sensor_data, mu, sigma, landmarks):
 
     mu = mu + np.dot(K, (np.array(Z) - np.array(expected_ranges)))
     sigma = np.dot(np.eye(len(sigma)) - np.dot(K, H), sigma)
-
+    mu[2] = theta
     global cordinates1
     cordinates1[0].append(mu[0])
     cordinates1[1].append(mu[1])
@@ -273,21 +228,18 @@ def map_matching(lidar_scan , res):
 
     if ((delta_pos[0][0]*delta_pos[0][0] + delta_pos[0][1]*delta_pos[0][1]) <0.16):
 
-
-
         mu[0] += delta_pos[0][0]*1000
         mu[1] += delta_pos[0][1]*1000
-        mu[2] += delta_pos[0][2]
+        #mu[2] += delta_pos[0][2]
+        mu[2] = pos_theta
 
-        #for i in range(len(M_occ_list)):
-        #    occ_value = ...
 
-        #
+
         for i in range(len(lidar_scan[0])):
             if (math.isinf(lidar_scan[0][i]) == False):
                 # rotate lidar_scan with robot pose mu
-                G_scan = np.array([np.cos(pos_theta) * lidar_scan[0][i] - np.sin(pos_theta) * lidar_scan[1][i] + mu[0]/1000,
-                                   np.sin(pos_theta) * lidar_scan[0][i] + np.cos(pos_theta) * lidar_scan[1][i] + mu[1]/1000])
+                G_scan = np.array([np.cos(mu[2]) * lidar_scan[0][i] - np.sin(mu[2]) * lidar_scan[1][i] + mu[0]/1000,
+                                   np.sin(mu[2]) * lidar_scan[0][i] + np.cos(mu[2]) * lidar_scan[1][i] + mu[1]/1000])
 
                 # occ_value map and the gradient of occ_value map
                 x_occ, y_occ = int(G_scan[0] / res), int(G_scan[1] / res)
@@ -382,32 +334,33 @@ def timeStep():
             if uwb_init_control==10:
                 mapInitFill(0.01)
             elif uwb_init_control>10:
+                mu[2]=np.deg2rad(-90)
                 mu = map_matching(now_lidar_data,0.01)
+                plot_state()
 
             #sınırlandırmak için
             #if uwb_init_control==40:
             #     break
 
         i=i+1
-        #time.sleep(0.033)
+        #time.sleep(0.01)
 
-    print("sonuçlar")
 
     #add trajectory
-    for i in range(len(cordinates1[0])):
-        occ_val[int(cordinates1[0][i]/10)][int(cordinates1[1][i]/10)]=0.5
+    #for i in range(len(cordinates1[0])):
+    #    occ_val[int(cordinates1[0][i]/10)][int(cordinates1[1][i]/10)]=1
 
     #shift map
-    occ_val = np.roll(occ_val, 300, axis=0)
-    occ_val = np.roll(occ_val, 300, axis=1)
+    #occ_val = np.roll(occ_val, 400, axis=0)
+    #occ_val = np.roll(occ_val, 400, axis=1)
 
-    plt.imshow(occ_val)
+    #plt.imshow(occ_val)
     #plt.plot(cordinates1[0],cordinates1[1], 'ro')
-    plt.show()
+    #plt.show()
 
-    plt.plot(cordinates1[0], cordinates1[1], 'ro')
-    plt.axes().set_aspect('equal', 'datalim')
-    plt.show()
+    #plt.axes().set_aspect('equal', 'datalim')
+    #plt.plot(cordinates1[0], cordinates1[1], 'ro')
+    #plt.show()
 
 
 
@@ -442,7 +395,7 @@ def odomCal(indexx):
 def mapInit(res,width,height):
     global occ_val,occ_val_empty
     occ_val = np.zeros((int(width/res), int(height/res)))
-    occ_val_empty =occ_val
+    occ_val_empty =np.zeros((int(width/res), int(height/res)))
 
 
 def main():
