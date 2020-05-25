@@ -12,7 +12,7 @@ from matplotlib.pyplot import figure, draw, pause
 from scipy.ndimage.interpolation import shift
 
 
-#push github
+
 # #plot preferences, interactive plotting mode
 fig = plt.figure()
 plt.ion()
