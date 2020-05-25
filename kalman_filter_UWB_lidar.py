@@ -73,8 +73,8 @@ def prediction_step(odometry, mu, sigma):
     x_new = x + delta_vel*np.cos(theta)/30
     y_new = y + delta_vel*np.sin(theta)/30
 
-
-    theta_new = theta + delta_w
+    #we divided by 30 because delta w unit is rad/sec
+    theta_new = theta + delta_w/30
 
     #delta_vel = math.sqrt(math.square(delta_vel_x)+math.square(delta_vel_y))
     #Jakobian of g with respect to the state
@@ -318,7 +318,7 @@ def timeStep():
 
     global  mu ,sigma,occ_val
     global now_odom_data,now_lidar_data,now_uwb_data
-
+    mu[2] = np.deg2rad(-90)
     i = 0
     while (i<len(odom_data)-7 ): #-2 sonradan silinecek
         now_odom_data=odomCal(i)
@@ -334,7 +334,7 @@ def timeStep():
             if uwb_init_control==10:
                 mapInitFill(0.01)
             elif uwb_init_control>10:
-                mu[2]=np.deg2rad(-90)
+
                 mu = map_matching(now_lidar_data,0.01)
                 plot_state()
 
