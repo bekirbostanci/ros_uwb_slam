@@ -1,7 +1,6 @@
 import numpy as np
 import scipy.stats
 import matplotlib.pyplot as plt
-#from read_data import read_world, read_sensor_data
 from matplotlib.patches import Ellipse
 import csv
 import pandas as pd
@@ -10,22 +9,24 @@ import math
 import matplotlib
 from matplotlib.pyplot import figure, draw, pause
 from scipy.ndimage.interpolation import shift
+#from read_data import read_world, read_sensor_data
 
 
 
-# #plot preferences, interactive plotting mode
-fig = plt.figure()
-plt.ion()
-plt.show()
+##plot preferences, interactive plotting mode
+#fig = plt.figure()
+#plt.ion()
+#plt.show()
 
 def plot_state():
     yocc_val = occ_val
+
     for i in range(len(cordinates1[0])):
         yocc_val[int(cordinates1[0][i]/10)][int(cordinates1[1][i]/10)]=1
 
     #shift map
-    yocc_val= np.roll(yocc_val, 400, axis=0)
-    yocc_val= np.roll(yocc_val, 400, axis=1)
+    yocc_val= np.roll(yocc_val, int(40000*res), axis=0)
+    yocc_val= np.roll(yocc_val, int(40000*res), axis=1)
 
 
     plt.clf()
@@ -42,8 +43,6 @@ def prediction_step(odometry, mu, sigma):
     # mu: 3x1 vector representing the mean (x,y,theta) of the
     #     belief distribution
     # sigma: 3x3 covariance matrix of belief distribution
-
-
 
     x = mu[0]
     y = mu[1]
@@ -67,7 +66,7 @@ def prediction_step(odometry, mu, sigma):
     w_noise = delta_w**2
 
     sigma_u = np.array([[noise + v_noise, 0.0],[0.0, noise + w_noise]])
-    B = np.array([[np.cos(theta), 0.0],[np.sin(theta), 0.0],[0.0, 1.0]])
+    B = np.array([[np.cos(theta), 0.0],[np.sin(theta), 0.0],[0.0, 1.0]])        #Q ile değiştir
 
     #noise free motion
     x_new = x + delta_vel*np.cos(theta)/30
@@ -84,8 +83,8 @@ def prediction_step(odometry, mu, sigma):
 
     #new mu and sigma
     mu = [x_new, y_new, theta_new]
-    #sigma = np.dot(np.dot(G,sigma),np.transpose(G)) + Q
-    sigma = np.dot(np.dot(G, sigma), np.transpose(G)) + np.dot(np.dot(B, sigma_u), np.transpose(B))
+    sigma = np.dot(np.dot(G,sigma),np.transpose(G)) + Q
+    #sigma = np.dot(np.dot(G, sigma), np.transpose(G)) + np.dot(np.dot(B, sigma_u), np.transpose(B))
 
     global cordinates1
     cordinates1[0].append(mu[0])
@@ -113,7 +112,7 @@ def correction_step(sensor_data, mu, sigma, landmarks):
     #ids = sensor_data['id']
     #ranges = sensor_data['range']
     ranges = sensor_data
-    ids = 4 ## rosa tasirken kapat
+    ids = 6 ## rosa tasirken kapat
 
 
     # Compute the expected range measurements for each landmark.
@@ -141,19 +140,15 @@ def correction_step(sensor_data, mu, sigma, landmarks):
     K = np.dot(np.dot(sigma, np.transpose(H)), K_help)
     # Kalman correction of mean and covariance
 
-    #control thetha
-    #her hangi bir onemi yok sadece kontrol ettim buradan sizde bakabilirsiniz
-    if  np.dot(K, (np.array(Z) - np.array(expected_ranges)))[2]> 10:
-        print(np.rad2deg(np.dot(K, (np.array(Z) - np.array(expected_ranges)))[2]))
 
     mu = mu + np.dot(K, (np.array(Z) - np.array(expected_ranges)))
     sigma = np.dot(np.eye(len(sigma)) - np.dot(K, H), sigma)
     mu[2] = theta
-    global cordinates1
-    cordinates1[0].append(mu[0])
-    cordinates1[1].append(mu[1])
 
-    #print(np.rad2deg(mu[2]))
+    global cordinates2
+    cordinates2[0].append(mu[0])
+    cordinates2[1].append(mu[1])
+
 
     #print(mu)
     return mu, sigma
@@ -170,11 +165,7 @@ def map_matching(lidar_scan , res):
     H = np.zeros((3,3))
     G = np.zeros((3,1))
 
-    #plot1 = plt.figure(1)
-    #plt.imshow(occ_val)
-
     xocc_val = occ_val_empty
-
 
     for i in range(len(lidar_scan[0])):
         if (math.isinf(lidar_scan[0][i])==False):
@@ -201,11 +192,11 @@ def map_matching(lidar_scan , res):
                     ((P_11[0]*res - R_scan[0])/(P_11[0]*res - P_00[0]*res))*occ_val[P_00[0]][P_00[1]]))
 
             #### ?????
+
             if M_occ>0.01:
                 M_occ = 1
-                #xocc_val[i_occ][j_occ] = 1
-            #else:
-                #xocc_val[i_occ][j_occ] = 0
+            else:
+                M_occ=0
 
 
             G_M = np.array([(((R_scan[1]-P_00[1]*res)/(P_01[1]*res - P_00[1]*res))*(occ_val[P_11[0]][P_11[1]] - occ_val[P_01[0]][P_01[1]]) +\
@@ -226,12 +217,13 @@ def map_matching(lidar_scan , res):
     delta_pos = np.transpose(delta_pos)
 
 
-    if ((delta_pos[0][0]*delta_pos[0][0] + delta_pos[0][1]*delta_pos[0][1]) <0.16):
+
+    if ((delta_pos[0][0]*delta_pos[0][0] + delta_pos[0][1]*delta_pos[0][1]) <0.16): #0.16 dusurulebilir
 
         mu[0] += delta_pos[0][0]*1000
         mu[1] += delta_pos[0][1]*1000
-        #mu[2] += delta_pos[0][2]
-        mu[2] = pos_theta
+        mu[2] += delta_pos[0][2]
+        #mu[2] = pos_theta
 
 
 
@@ -243,7 +235,7 @@ def map_matching(lidar_scan , res):
 
                 # occ_value map and the gradient of occ_value map
                 x_occ, y_occ = int(G_scan[0] / res), int(G_scan[1] / res)
-                xocc_val[x_occ][y_occ]=1
+                occ_val[x_occ][y_occ]=1
 
 
 
@@ -255,10 +247,13 @@ def map_matching(lidar_scan , res):
         #plt.imshow(xocc_val)
         #plt.show()
 
-    occ_val = xocc_val
+    #occ_val = xocc_val
     return mu
 
 
+cordinates2 = []
+cordinates2.append([])
+cordinates2.append([])
 
 cordinates1 = []
 cordinates1.append([])
@@ -274,16 +269,22 @@ now_odom_data  = []
 occ_val = []
 xocc_val = []
 occ_val_empty = []
-
+res = 0.01
 
 #initialize belief
 mu = [0.0, 0.0, 0.0]
-sigma = np.array([[1.0, 0.0, 0.0],
-                      [0.0, 1.0, 0.0],
-                      [0.0, 0.0, 1.0]])
 
-landmarks = [[1400,2000,0],[-1400,2000,0],[1400,-2000,0],[-1400,-2000,0]]
+#not sigma degerleri degistirilebilir
+sigma = np.array([[500.0, 0.0, 0.0],
+                   [0.0, 500.0, 0.0],
+                   [0.0, 0.0, 0.05]])
 
+landmarks = [[600,750,0],[-600,1050,0],[1400,2000,0],[-1400,2000,0],[1400,-2000,0],[-1400,-2000,0]]
+
+def mapInit(res,width,height):
+    global occ_val,occ_val_empty
+    occ_val = np.zeros((int(width/res), int(height/res)))
+    occ_val_empty =np.zeros((int(width/res), int(height/res)))
 
 def mapInitFill(res):
     global occ_val,now_lidar_data
@@ -314,11 +315,11 @@ def mapInitFill(res):
 
 
 def timeStep():
-    uwb_init_control = 0
-
     global  mu ,sigma,occ_val
     global now_odom_data,now_lidar_data,now_uwb_data
-    mu[2] = np.deg2rad(-90)
+
+    uwb_init_control = 0
+    mu[2] = np.deg2rad(-106)
     i = 0
     while (i<len(odom_data)-7 ): #-2 sonradan silinecek
         now_odom_data=odomCal(i)
@@ -332,10 +333,9 @@ def timeStep():
 
 
             if uwb_init_control==10:
-                mapInitFill(0.01)
+                mapInitFill(res)
             elif uwb_init_control>10:
-
-                mu = map_matching(now_lidar_data,0.01)
+                mu = map_matching(now_lidar_data,res)
                 plot_state()
 
             #sınırlandırmak için
@@ -347,16 +347,16 @@ def timeStep():
 
 
     #add trajectory
-    #for i in range(len(cordinates1[0])):
-    #    occ_val[int(cordinates1[0][i]/10)][int(cordinates1[1][i]/10)]=1
+    for i in range(len(cordinates1[0])):
+        occ_val[int(cordinates1[0][i]/(res*1000))][int(cordinates1[1][i]/(res*1000))]=1
 
-    #shift map
-    #occ_val = np.roll(occ_val, 400, axis=0)
-    #occ_val = np.roll(occ_val, 400, axis=1)
+    ##shift map
+    occ_val = np.roll(occ_val, int(40000*res), axis=0)
+    occ_val = np.roll(occ_val, int(40000*res), axis=1)
 
-    #plt.imshow(occ_val)
+    plt.imshow(occ_val)
     #plt.plot(cordinates1[0],cordinates1[1], 'ro')
-    #plt.show()
+    plt.show()
 
     #plt.axes().set_aspect('equal', 'datalim')
     #plt.plot(cordinates1[0], cordinates1[1], 'ro')
@@ -392,10 +392,7 @@ def odomCal(indexx):
     odom_angular_z= odom_data.twist_twist_angular_z[indexx]
     return [odom_linear_x,odom_angular_z]
 
-def mapInit(res,width,height):
-    global occ_val,occ_val_empty
-    occ_val = np.zeros((int(width/res), int(height/res)))
-    occ_val_empty =np.zeros((int(width/res), int(height/res)))
+
 
 
 def main():
@@ -413,10 +410,10 @@ def main():
 
     #sensor_readings = read_sensor_data("../data/sensor_data.dat")
 
-    mapInit(0.01,10.0,10.0)
+    mapInit(res,10.0,10.0)
 
     #occ_value = [] # 0 (serbest) ve 1 (dolu) doldurulması gerekiyor (400 cmx 400 cm, 5cm resolution, 80 cells for 4 m)
-    res = 5 # cm
+    #res = 5 # cm
     # map_limits = [-1, 12, -1, 10]
 
     #run kalman filter
@@ -440,7 +437,6 @@ def main():
 
         #mu, occ_value = map_matching(mu, lidar_scan, map_scan, occ_value, res)
     '''
-    plt.show('hold')
 
 if __name__ == "__main__":
     main()
