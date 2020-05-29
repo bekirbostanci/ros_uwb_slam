@@ -7,9 +7,52 @@ import pandas as pd
 import time
 import math
 import matplotlib
-from matplotlib.pyplot import figure, draw, pause
-from scipy.ndimage.interpolation import shift
+import icp
+
 #from read_data import read_world, read_sensor_data
+
+lidar_cordinates = []
+lidar_cordinates.append([])
+lidar_cordinates.append([])
+
+map_cordinates = []
+map_cordinates.append([])
+map_cordinates.append([])
+
+
+##correction step cordinates
+cordinates2 = []
+cordinates2.append([])
+cordinates2.append([])
+
+##prediction step cordinates
+cordinates1 = []
+cordinates1.append([])
+cordinates1.append([])
+
+lidar_data =[]
+odom_data =[]
+uwb_data =[]
+
+now_lidar_data = []
+now_uwb_data  = []
+now_odom_data  = []
+
+occ_val = []
+xocc_val = []
+occ_val_empty = []
+res = 0.01
+
+#initialize belief
+mu = [0.0, 0.0, 0.0]
+
+#not sigma degerleri degistirilebilir
+sigma = np.array([[500.0, 0.0, 0.0],
+                   [0.0, 500.0, 0.0],
+                   [0.0, 0.0, 0.05]])
+
+landmarks = [[600,750,0],[-600,1050,0],[1400,2000,0],[-1400,2000,0],[1400,-2000,0],[-1400,-2000,0]]
+
 
 
 
@@ -90,6 +133,7 @@ def prediction_step(odometry, mu, sigma):
     cordinates1[0].append(mu[0])
     cordinates1[1].append(mu[1])
 
+
     return mu, sigma
 
 
@@ -154,16 +198,51 @@ def correction_step(sensor_data, mu, sigma, landmarks):
     return mu, sigma
 
 
+def icp_process(lidar_scan):
+    global lidar_cordinates
+    global mu
+
+    for i in range(len(lidar_scan[0])):
+        if (math.isinf(lidar_scan[0][i]) == False):
+            # rotate lidar_scan with robot pose mu
+            G_scan = np.array([np.cos(mu[2]) * lidar_scan[0][i] - np.sin(mu[2]) * lidar_scan[1][i] + mu[0] / 1000,
+                               np.sin(mu[2]) * lidar_scan[0][i] + np.cos(mu[2]) * lidar_scan[1][i] + mu[1] / 1000])
+
+            # occ_value map and the gradient of occ_value map
+            x_occ, y_occ = int(G_scan[0] / res), int(G_scan[1] / res)
+            lidar_cordinates[0].append(x_occ)
+            lidar_cordinates[1].append(y_occ)
+
+    dx,dy,rotation=icp.icp_start(map_cordinates,lidar_cordinates)
+    mu[0] += res*dx
+    mu[1] += res*dy
+    mu[2] -= np.deg2rad(rotation)
 
 
-def map_matching(lidar_scan , res):
+    for i in range(len(lidar_scan[0])):
+        if (math.isinf(lidar_scan[0][i]) == False):
+            # rotate lidar_scan with robot pose mu
+            G_scan = np.array([np.cos(mu[2]) * lidar_scan[0][i] - np.sin(mu[2]) * lidar_scan[1][i] + mu[0]/1000,
+            np.sin(mu[2]) * lidar_scan[0][i] + np.cos(mu[2]) * lidar_scan[1][i] + mu[1]/1000])
+
+            # occ_value map and the gradient of occ_value map
+            x_occ, y_occ = int(G_scan[0] / res), int(G_scan[1] / res)
+            map_cordinates[0].append(x_occ)
+            map_cordinates[1].append(y_occ)
+            occ_val[x_occ][y_occ]=1
+
+
+def map_matching(lidar_scan ):
     global mu,occ_val,occ_val_empty,xocc_val
+    global map_cordinates
+
     global tra
     pos_x = mu[0]/1000
     pos_y = mu[1]/1000
     pos_theta = mu[2]
     H = np.zeros((3,3))
     G = np.zeros((3,1))
+
 
     xocc_val = occ_val_empty
 
@@ -216,78 +295,51 @@ def map_matching(lidar_scan , res):
     delta_pos = np.dot(np.linalg.pinv(H),G)
     delta_pos = np.transpose(delta_pos)
 
+    #if np.abs(np.rad2deg(delta_pos[0][2])) > 0.3:
+    #icp_process(now_lidar_data)
 
-
-    if ((delta_pos[0][0]*delta_pos[0][0] + delta_pos[0][1]*delta_pos[0][1]) <0.16): #0.16 dusurulebilir
+    if ((delta_pos[0][0]*delta_pos[0][0] + delta_pos[0][1]*delta_pos[0][1]) <0.01): #0.16 dusurulebilir
 
         mu[0] += delta_pos[0][0]*1000
         mu[1] += delta_pos[0][1]*1000
         mu[2] += delta_pos[0][2]
         #mu[2] = pos_theta
 
-
-
+        icp_process(now_lidar_data)
+        '''
+        
         for i in range(len(lidar_scan[0])):
-            if (math.isinf(lidar_scan[0][i]) == False):
+            if (math.isinf(lidar_scan[0][i]) == False  ):
+                ##filter far lidar points
+                #if (((lidar_scan[0][i]-mu[0]/1000)**2) +((lidar_scan[1][i]-mu[1]/1000)**2))<4.0:
                 # rotate lidar_scan with robot pose mu
                 G_scan = np.array([np.cos(mu[2]) * lidar_scan[0][i] - np.sin(mu[2]) * lidar_scan[1][i] + mu[0]/1000,
-                                   np.sin(mu[2]) * lidar_scan[0][i] + np.cos(mu[2]) * lidar_scan[1][i] + mu[1]/1000])
+                    np.sin(mu[2]) * lidar_scan[0][i] + np.cos(mu[2]) * lidar_scan[1][i] + mu[1]/1000])
 
                 # occ_value map and the gradient of occ_value map
                 x_occ, y_occ = int(G_scan[0] / res), int(G_scan[1] / res)
                 occ_val[x_occ][y_occ]=1
-
+        '''
 
 
         print("")
-        print("delta pos\t:",delta_pos[0][2])
+        print("delta pos\t:",np.rad2deg(delta_pos[0][2]))
         print("thetha  \t:",pos_theta)
         print("mu[2]  \t\t:",mu[2])
-        #plot2 = plt.figure(2)
-        #plt.imshow(xocc_val)
-        #plt.show()
 
-    #occ_val = xocc_val
+
+
     return mu
 
 
-cordinates2 = []
-cordinates2.append([])
-cordinates2.append([])
-
-cordinates1 = []
-cordinates1.append([])
-cordinates1.append([])
-lidar_data =[]
-odom_data =[]
-uwb_data =[]
-
-now_lidar_data = []
-now_uwb_data  = []
-now_odom_data  = []
-
-occ_val = []
-xocc_val = []
-occ_val_empty = []
-res = 0.01
-
-#initialize belief
-mu = [0.0, 0.0, 0.0]
-
-#not sigma degerleri degistirilebilir
-sigma = np.array([[500.0, 0.0, 0.0],
-                   [0.0, 500.0, 0.0],
-                   [0.0, 0.0, 0.05]])
-
-landmarks = [[600,750,0],[-600,1050,0],[1400,2000,0],[-1400,2000,0],[1400,-2000,0],[-1400,-2000,0]]
-
-def mapInit(res,width,height):
+def map_init(res,width,height):
     global occ_val,occ_val_empty
     occ_val = np.zeros((int(width/res), int(height/res)))
     occ_val_empty =np.zeros((int(width/res), int(height/res)))
 
-def mapInitFill(res):
+def map_init_fill(res):
     global occ_val,now_lidar_data
+    global map_cordinates
     global mu
 
     pos_x = mu[0]/1000
@@ -303,18 +355,16 @@ def mapInitFill(res):
 
             x_cor = int(np.floor(R_scan[0]/res))
             y_cor = int(np.floor(R_scan[1]/res))
-            '''
-    
-            x_cor = int(np.floor(R_scan[0]/res)+np.floor(occ_val.shape[0]/2))
-            y_cor = int(np.floor(R_scan[1]/res)+np.floor(occ_val.shape[1]/2))
-            '''
+
             occ_val[x_cor][y_cor] = 1
 
+            map_cordinates[0].append(x_cor)
+            map_cordinates[1].append(y_cor)
             #occ_val[int(np.floor(occ_val.shape[0] / 2))][int(np.floor(occ_val.shape[1] / 2))] = 2
 
 
 
-def timeStep():
+def time_step():
     global  mu ,sigma,occ_val
     global now_odom_data,now_lidar_data,now_uwb_data
 
@@ -322,21 +372,24 @@ def timeStep():
     mu[2] = np.deg2rad(-106)
     i = 0
     while (i<len(odom_data)-7 ): #-2 sonradan silinecek
-        now_odom_data=odomCal(i)
+        now_odom_data=odom_cal(i)
         mu, sigma = prediction_step(now_odom_data, mu, sigma)
         if((i%6)==0):
             uwb_init_control = uwb_init_control + 1
 
-            now_lidar_data = lidarPosCal(i/6)
-            now_uwb_data = uwbCal(i/6)
+            now_lidar_data = lidar_pos_cal(i/6)
+            now_uwb_data = uwb_cal(i/6)
             mu, sigma = correction_step(now_uwb_data, mu, sigma, landmarks)
 
 
             if uwb_init_control==10:
-                mapInitFill(res)
+                map_init_fill(res)
             elif uwb_init_control>10:
-                mu = map_matching(now_lidar_data,res)
+                #icp_process(now_lidar_data)
+
+                mu = map_matching(now_lidar_data)
                 plot_state()
+
 
             #sınırlandırmak için
             #if uwb_init_control==40:
@@ -364,7 +417,7 @@ def timeStep():
 
 
 
-def lidarPosCal(indexx):
+def lidar_pos_cal(indexx):
     try:
         scan = lidar_data.ranges[indexx][1:-1].split(', ')
     except:
@@ -382,12 +435,12 @@ def lidarPosCal(indexx):
 
     return cordinates
 
-def uwbCal(indexx):
+def uwb_cal(indexx):
     uwb = uwb_data.distance[indexx][1:-1].split(', ')
     uwb = list(map(float, uwb))
     return uwb
 
-def odomCal(indexx):
+def odom_cal(indexx):
     odom_linear_x = odom_data.twist_twist_linear_x[indexx]
     odom_angular_z= odom_data.twist_twist_angular_z[indexx]
     return [odom_linear_x,odom_angular_z]
@@ -410,7 +463,7 @@ def main():
 
     #sensor_readings = read_sensor_data("../data/sensor_data.dat")
 
-    mapInit(res,10.0,10.0)
+    map_init(res,10.0,10.0)
 
     #occ_value = [] # 0 (serbest) ve 1 (dolu) doldurulması gerekiyor (400 cmx 400 cm, 5cm resolution, 80 cells for 4 m)
     #res = 5 # cm
@@ -420,7 +473,7 @@ def main():
 
 
     #run simulatoion
-    timeStep()
+    time_step()
     '''
     for timestep in range(len(sensor_readings)//2):
 
