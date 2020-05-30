@@ -74,8 +74,8 @@ def icp(a, b,max_time = 1):
     Tr = numpy.array([[numpy.cos(init_pose[2]),-numpy.sin(init_pose[2]),init_pose[0]],
                    [numpy.sin(init_pose[2]), numpy.cos(init_pose[2]),init_pose[1]],
                    [0,                    0,                   1          ]])
-    print("src",numpy.shape(src))
-    print("Tr[0:2]",numpy.shape(Tr[0:2]))
+    #print("src",numpy.shape(src))
+    #print("Tr[0:2]",numpy.shape(Tr[0:2]))
     src = cv2.transform(src, Tr[0:2])
     p_opt = numpy.array(init_pose)
     T_opt = numpy.array([])
@@ -102,7 +102,7 @@ def icp(a, b,max_time = 1):
     return T_opt, error_max
 
 
-def icp_start(temp,dat ):
+def icp_start(temp,dat ,step):
     import cv2
     import numpy
     import random
@@ -159,20 +159,22 @@ def icp_start(temp,dat ):
     dy = T[1,2]
     rotation = numpy.arcsin(T[0,1]) * 360 / 2 / numpy.pi
 
-    print("T",T)
-    print("error",error)
-    print("rotation°",rotation)
-    print("dx",dx)
-    print("dy",dy)
+    #print("T",T)
+    print("step ",step)
+    print("error ",error)
+    #print("rotation°",rotation)
+    #print("dx",dx)
+    #print("dy",dy)
 
-    '''
-    result = cv2.transform(numpy.array([data.T], copy=True).astype(numpy.float32), T).T
-    matplotlib.pyplot.scatter(template[0], template[1], label="template")
-    matplotlib.pyplot.scatter(data[0], data[1], label="data")
-    matplotlib.pyplot.scatter(result[0], result[1], label="result: "+str(rotation)+"° - "+str([dx,dy]))
-    matplotlib.pyplot.legend(loc="upper left")
-    matplotlib.pyplot.axis('square')
-    matplotlib.pyplot.show()
-    '''
+    if  step>1000:
+        result = cv2.transform(numpy.array([data.T], copy=True).astype(numpy.float32), T).T
+        matplotlib.pyplot.scatter(template[0], template[1], label="map",alpha=0.5,s=65)
+        matplotlib.pyplot.scatter(data[0], data[1], label="lidar",alpha=1,s=45)
+        matplotlib.pyplot.scatter(result[0], result[1], label="result: "+str(rotation)+"° - "+str([dx,dy]),alpha=1,s=65)
+        matplotlib.pyplot.legend(loc="upper left")
+        matplotlib.pyplot.axis('square')
+        matplotlib.pyplot.show()
 
-    return dx,dy,rotation
+
+
+    return dx,dy,rotation,error

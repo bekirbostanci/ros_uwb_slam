@@ -77,7 +77,6 @@ def prediction_step(odometry, mu, sigma):
     x = mu[0]
     y = mu[1]
     theta = mu[2]
-    print(theta)
     delta_rot1 = odometry['r1']
     delta_trans = odometry['t']
     delta_rot2 = odometry['r2']
@@ -113,7 +112,6 @@ def correction_step(sensor_data, mu, sigma, landmarks):
     x = mu[0]
     y = mu[1]
     theta = mu[2]
-    print(theta)
     #measured landmark ids and ranges
     ids = sensor_data['id']
     ranges = sensor_data['range']
@@ -122,27 +120,34 @@ def correction_step(sensor_data, mu, sigma, landmarks):
     H = []
     Z = []
     expected_ranges = []
+
+    global count
+    count=0
     for i in range(len(ids)):
-        lm_id = ids[i]
-        meas_range = ranges[i]
-        lx = landmarks[lm_id][0]
-        ly = landmarks[lm_id][1]
-        #calculate expected range measurement
-        range_exp = np.sqrt( (lx - x)**2 + (ly - y)**2 )
-        #compute a row of H for each measurement
-        H_i = [(x - lx)/range_exp, (y - ly)/range_exp, 0]
-        H.append(H_i)
-        Z.append(ranges[i])
-        expected_ranges.append(range_exp)
+        if ids[i] <=4 :
+            count = count +1
+            lm_id = ids[i]
+            meas_range = ranges[i]
+            lx = landmarks[lm_id][0]
+            ly = landmarks[lm_id][1]
+            #calculate expected range measurement
+            range_exp = np.sqrt( (lx - x)**2 + (ly - y)**2 )
+            #compute a row of H for each measurement
+            H_i = [(x - lx)/range_exp, (y - ly)/range_exp, 0]
+            Z.append(ranges[i])
+            H.append(H_i)
+            expected_ranges.append(range_exp)
+
     # noise covariance for the measurements
-    R = 0.5 * np.eye(len(ids))
+    R = 0.5 * np.eye(count)
     # Kalman gain
     K_help = np.linalg.inv(np.dot(np.dot(H, sigma), np.transpose(H)) + R)
     K = np.dot(np.dot(sigma, np.transpose(H)), K_help)
     # Kalman correction of mean and covariance
     mu = mu + np.dot(K, (np.array(Z) - np.array(expected_ranges)))
     sigma = np.dot(np.eye(len(sigma)) - np.dot(K, H), sigma)
-    print(mu[2])
+    print(mu)
+
     return mu, sigma
 
 def main():

@@ -8,6 +8,7 @@ import time
 import math
 import matplotlib
 import icp
+import random
 
 #from read_data import read_world, read_sensor_data
 
@@ -44,13 +45,13 @@ res = 0.01
 #initialize belief
 mu = [0.0, 0.0, 0.0]
 
-
 #not sigma degerleri degistirilebilir
 sigma = np.array([[500.0, 0.0, 0.0],
                    [0.0, 500.0, 0.0],
                    [0.0, 0.0, 0.05]])
 
 landmarks = [[600,750,0],[-600,1050,0],[1400,2000,0],[-1400,2000,0],[1400,-2000,0],[-1400,-2000,0]]
+#landmarks = [[1400,2000,0],[-1400,2000,0],[1400,-2000,0],[-1400,-2000,0]]
 
 
 
@@ -85,17 +86,16 @@ def prediction_step(odometry, mu, sigma):
     # mu: 3x1 vector representing the mean (x,y,theta) of the
     #     belief distribution
     # sigma: 3x3 covariance matrix of belief distribution
-
     x = mu[0]
     y = mu[1]
     theta = mu[2]
 
-    #delta_vel = odometry['r1']     # redefine r1                  odom=>twist=>linear=>x
-    #delta_vel_y = odometry['r1']   # redefine r1                  odom=>twist=>linear=>y
-    #delta_w = odometry['t']        # redefine t                   odom=>twist=>angular=>z
+    #delta_vel = odometry['r1']     # redefine r1                   odom=>twist=>linear=>x
+    #delta_vel_y = odometry['r1']   # redefine r1                   odom=>twist=>linear=>y
+    #delta_w = odometry['t']        # redefine t                    odom=>twist=>angular=>z
 
-    delta_vel = odometry[0]         # redefine r1                  odom=>twist=>linear=>x
-    delta_w = odometry[1]           # redefine t                   odom=>twist=>angular=>z
+    delta_vel = odometry[0]         # redefine r1                   odom=>twist=>linear=>x
+    delta_w = odometry[1]           # redefine t                    odom=>twist=>angular=>z
 
 
     #motion noise                                             refine the value
@@ -145,7 +145,6 @@ def correction_step(sensor_data, mu, sigma, landmarks):
     # mu: 3x1 vector representing the mean (x,y,theta) of the
     #     belief distribution
     # sigma: 3x3 covariance matrix of belief distribution
-
     x = mu[0]
     y = mu[1]
     theta = mu[2]
@@ -177,7 +176,7 @@ def correction_step(sensor_data, mu, sigma, landmarks):
         Z.append(ranges[i]/1000)
         expected_ranges.append(range_exp)
     # noise covariance for the measurements
-    R = 0.5 * np.eye(ids)
+    R = 0.05 * np.eye(ids)
     # Kalman gain
     K_help = np.linalg.inv(np.dot(np.dot(H, sigma), np.transpose(H)) + R)
     K = np.dot(np.dot(sigma, np.transpose(H)), K_help)
@@ -190,14 +189,15 @@ def correction_step(sensor_data, mu, sigma, landmarks):
     #mu[2] = theta
     print(mu)
 
-    global  cordinates1
-    cordinates1[0].append(mu[0])
-    cordinates1[1].append(mu[1])
-
+    global cordinates2
+    cordinates2[0].append(mu[0])
+    cordinates2[1].append(mu[1])
+    return mu, sigma
 
 
 step = 0
 def icp_process(lidar_scan):
+    #global lidar_cordinates
     global mu,step
 
     lidar_cordinates = []
@@ -268,6 +268,9 @@ def icp_process(lidar_scan):
 
             occ_val[x_occ][y_occ]=1
 
+    global cordinates2
+    cordinates2[0].append(mu[0])
+    cordinates2[1].append(mu[1])
 
 
 def map_matching(lidar_scan ):
@@ -406,7 +409,7 @@ def time_step():
 
             now_lidar_data = lidar_pos_cal(i/6)
             now_uwb_data = uwb_cal(i/6)
-            correction_step(now_uwb_data, mu, sigma, landmarks)
+            #mu, sigma = correction_step(now_uwb_data, mu, sigma, landmarks)
 
 
             if uwb_init_control==10:
@@ -416,8 +419,9 @@ def time_step():
                 if uwb_init_control==25:
                     occ_val = np.zeros((int(10.0 / res), int(10.0/ res)))
 
-                icp_process(now_lidar_data)
+
                 #map_matching(now_lidar_data)
+                icp_process(now_lidar_data)
                 plot_state()
 
             #sınırlandırmak için
@@ -425,6 +429,7 @@ def time_step():
             #     break
 
         i=i+1
+        #time.sleep(0.01)
 
 
     #add trajectory

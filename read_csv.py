@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 
-
+'''
 df = pd.read_csv("scan.csv")
 
 scan = df.ranges[0][1:-1].split(', ')
@@ -31,3 +31,22 @@ print(uwb)
 
 
 print(np.zeros((2,3)))
+'''
+
+robot_x = 0
+robot_y = 0
+
+duvar_x = 5
+duvar_y = 4
+
+angle = np.rad2deg(np.arctan((duvar_y-robot_y)/(duvar_x-robot_x)))
+angle = angle-180
+print(angle)
+search_x = int(np.cos(np.deg2rad(angle))+duvar_x)
+search_y = int(np.sin(np.deg2rad(angle))+duvar_y)
+
+
+print(search_x)
+print(search_y)
+
+
