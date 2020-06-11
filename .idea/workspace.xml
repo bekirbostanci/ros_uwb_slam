@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="1bea9902-2e14-4b58-99f4-1acc4b0c0a1c" name="Default Changelist" comment="" />
+    <list default="true" id="1bea9902-2e14-4b58-99f4-1acc4b0c0a1c" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fake_hectorslam.py" beforeDir="false" afterPath="$PROJECT_DIR$/fake_hectorslam.py" afterDir="false" />
+    </list>
     <list id="c204aa75-7ce5-467a-bfd1-88bf024c9035" name="Revert &quot;version 5&quot;" comment="Revert &quot;version 5&quot;&#10;&#10;This reverts commit cbf8d9f8" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -14,8 +17,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/fake_hectorslam.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="503">
-              <caret line="423" column="9" lean-forward="true" selection-start-line="423" selection-start-column="9" selection-end-line="423" selection-end-column="9" />
+            <state relative-caret-position="-391">
+              <caret line="195" lean-forward="true" selection-start-line="195" selection-end-line="195" />
             </state>
           </provider>
         </entry>
@@ -23,7 +26,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/fake_gslam.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="231">
+            <state relative-caret-position="-3423">
               <caret line="270" column="22" selection-start-line="270" selection-start-column="11" selection-end-line="270" selection-end-column="22" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
@@ -52,7 +55,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>mu[2]</find>
       <find>time_st</find>
       <find>samples</find>
       <find>-90</find>
@@ -65,7 +67,6 @@
       <find>106</find>
       <find>odom</find>
       <find>pred</find>
-      <find>icp</find>
       <find>predic</find>
       <find>correc</find>
       <find>mu</find>
@@ -80,8 +81,10 @@
       <find>time_</find>
       <find>time_step</find>
       <find>sigma</find>
-      <find>map_matching</find>
       <find>cordinates2</find>
+      <find>map_matching</find>
+      <find>icp</find>
+      <find>res</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -96,8 +99,8 @@
         <option value="$PROJECT_DIR$/icp.py" />
         <option value="$PROJECT_DIR$/kalman_filter_UWB_lidar.py" />
         <option value="$PROJECT_DIR$/face_gslam.py" />
-        <option value="$PROJECT_DIR$/fake_hectorslam.py" />
         <option value="$PROJECT_DIR$/fake_gslam.py" />
+        <option value="$PROJECT_DIR$/fake_hectorslam.py" />
       </list>
     </option>
   </component>
@@ -169,6 +172,27 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="fake_gslam" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="uwbslam" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/fake_gslam.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="fake_hectorslam" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="uwbslam" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -232,34 +256,13 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="read_csv" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <module name="uwbslam" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/read_csv.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
     <recent_temporary>
       <list>
         <item itemvalue="Python.fake_hectorslam" />
+        <item itemvalue="Python.fake_gslam" />
         <item itemvalue="Python.face_gslam" />
         <item itemvalue="Python.kalman_filter_UWB_lidar" />
         <item itemvalue="Python.kalman_filter" />
-        <item itemvalue="Python.read_csv" />
       </list>
     </recent_temporary>
   </component>
@@ -320,7 +323,7 @@
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info anchor="bottom" id="Run" order="2" visible="true" weight="0.25135428" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.25135428" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.22318527" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -448,13 +451,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/fake_hectorslam.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="503">
-          <caret line="423" column="9" lean-forward="true" selection-start-line="423" selection-start-column="9" selection-end-line="423" selection-end-column="9" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/docs/Screenshot_1.png">
       <provider selected="true" editor-type-id="images" />
     </entry>
@@ -464,9 +460,16 @@
     <entry file="file://$PROJECT_DIR$/docs/Screenshot_3.png">
       <provider selected="true" editor-type-id="images" />
     </entry>
+    <entry file="file://$PROJECT_DIR$/fake_hectorslam.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-391">
+          <caret line="195" lean-forward="true" selection-start-line="195" selection-end-line="195" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/fake_gslam.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="231">
+        <state relative-caret-position="-3423">
           <caret line="270" column="22" selection-start-line="270" selection-start-column="11" selection-end-line="270" selection-end-column="22" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />

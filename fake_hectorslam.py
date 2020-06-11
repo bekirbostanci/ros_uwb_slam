@@ -7,7 +7,7 @@ import pandas as pd
 import time
 import math
 import matplotlib
-import icp
+
 
 #from read_data import read_world, read_sensor_data
 
@@ -196,7 +196,7 @@ def correction_step(sensor_data, mu, sigma, landmarks):
 
     return mu, sigma
 
-
+'''
 step = 0
 def icp_process(lidar_scan):
     global mu,step
@@ -269,7 +269,7 @@ def icp_process(lidar_scan):
 
             occ_val[x_occ][y_occ]=1
 
-
+'''
 
 def map_matching(lidar_scan ):
     global mu,occ_val,occ_val_empty,xocc_val
@@ -310,7 +310,7 @@ def map_matching(lidar_scan ):
                     ((P_11[0]*res - R_scan[0])/(P_11[0]*res - P_00[0]*res))*occ_val[P_00[0]][P_00[1]]))
 
 
-            if M_occ>0.01:
+            if M_occ>0.0001:
                 M_occ = 1
             else:
                 M_occ=0
